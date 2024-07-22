@@ -16,19 +16,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const settingsButton = document.getElementById("settings-button");
   const restartButton = document.getElementById("restart-button");
   const postScoreButton = document.getElementById("post-score-button");
+  const viewHighscoresButton = document.getElementById(
+    "view-highscores-button"
+  );
   const gameContainer = document.getElementById("game-container");
   const gameoverScreen = document.getElementById("gameover-screen");
-  const highscoreElement = document.getElementById("highscore");
+  const scoreElement = document.getElementById("score");
+  const finalScoreElement = document.getElementById("final-score");
   const settingsPopup = document.getElementById("settings-popup");
   const closeSettingsBtn = document.querySelector(".close-btn");
   const emojiListContainer = document.querySelector(".emoji-list");
   const feedback = document.getElementById("feedback");
 
-  highscoreElement.textContent = `High Score: ${highscore}`;
+  // Hide game elements initially
+  gameContainer.style.display = "none";
+  gameoverScreen.style.display = "none";
   settingsButton.style.display = "none";
   restartButton.style.display = "none";
-  postScoreButton.style.display = "none";
-  gameContainer.style.display = "none";
 
   loginButton.addEventListener("click", async () => {
     if (window.nostr && window.nostr.getPublicKey) {
@@ -75,7 +79,6 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => {
           feedback.textContent = "";
         }, 3000);
-        await fetchAndDisplayHighScores();
       } catch (error) {
         console.error("Error posting high score:", error);
         feedback.textContent = "Error posting high score. Please try again.";
@@ -83,16 +86,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  viewHighscoresButton.addEventListener("click", () => {
+    window.location.href = "highscores.html";
+  });
+
   game.onGameOver = async (score) => {
     if (score > highscore) {
       highscore = score;
       localStorage.setItem("highscore", highscore);
-      highscoreElement.textContent = `High Score: ${highscore}`;
-      unlockNewEmoji();
     }
+    finalScoreElement.textContent = `Final Score: ${score}`;
     gameoverScreen.style.display = "flex";
-    postScoreButton.style.display = "block";
-    await fetchAndDisplayHighScores();
+  };
+
+  game.onScoreUpdate = (score) => {
+    scoreElement.textContent = `Score: ${score}`;
   };
 
   function updateEmojiList() {
@@ -125,61 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
       updateEmojiList();
     }
   }
-
-  async function fetchAndDisplayHighScores() {
-    try {
-      const highScores = await nostrClient.fetchHighScores();
-      displayHighScores(highScores);
-    } catch (error) {
-      console.error("Error fetching high scores:", error);
-      feedback.textContent = "Error fetching high scores. Please try again.";
-    }
-  }
-
-  function displayHighScores(highScores) {
-    const highscoreList = document.querySelector("#highscore-list ul");
-    highscoreList.innerHTML = "";
-    highScores.slice(0, 10).forEach((score, index) => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-                <img src="${
-                  score.picture || "placeholder.png"
-                }" alt="Profile Picture">
-                <span>${score.name || "Anonymous"}</span>: ${score.score}
-            `;
-      highscoreList.appendChild(li);
-    });
-  }
-
-  // Touch controls for mobile devices
-  let touchStartX = 0;
-  let touchStartY = 0;
-
-  document.addEventListener(
-    "touchstart",
-    function (e) {
-      touchStartX = e.changedTouches[0].screenX;
-      touchStartY = e.changedTouches[0].screenY;
-    },
-    false
-  );
-
-  document.addEventListener(
-    "touchend",
-    function (e) {
-      const touchEndX = e.changedTouches[0].screenX;
-      const touchEndY = e.changedTouches[0].screenY;
-      const dx = touchEndX - touchStartX;
-      const dy = touchEndY - touchStartY;
-
-      if (Math.abs(dx) > Math.abs(dy)) {
-        game.changeDirection(dx > 0 ? "ArrowRight" : "ArrowLeft");
-      } else {
-        game.changeDirection(dy > 0 ? "ArrowDown" : "ArrowUp");
-      }
-    },
-    false
-  );
 
   // Keyboard controls
   document.addEventListener("keydown", (e) => game.changeDirection(e.key));

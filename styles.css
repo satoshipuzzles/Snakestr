@@ -9,28 +9,15 @@
 
 body {
   font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
   background-color: var(--background-color);
   color: var(--text-color);
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
 .header {
   background-color: var(--header-background-color);
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
 }
 
 #profile-pic {
@@ -39,8 +26,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--button-background-color);
+  background-color: #000000; /* Changed to black */
   border-radius: 50%;
+  overflow: hidden; /* Ensure the image doesn't spill out */
+}
+
+#profile-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensure the image covers the area without distortion */
 }
 
 #profile-emoji {
@@ -48,13 +42,12 @@ body {
 }
 
 .game-container {
-  display: none;
   position: relative;
   width: 400px;
   height: 400px;
+  margin: 20px auto;
   background-color: var(--header-background-color);
   border: 2px solid var(--button-background-color);
-  margin: 20px auto;
 }
 
 .score-container {
@@ -131,35 +124,27 @@ body {
   right: 10px;
 }
 
-.btn {
+.btn-dark {
   background-color: var(--button-background-color);
-  color: var(--button-text-color);
-  border: none;
-  padding: 10px 15px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  border-color: var(--button-background-color);
 }
 
-.btn:hover {
+.btn-dark:hover {
   background-color: #444;
+  border-color: #444;
 }
 
 #feedback {
-  text-align: center;
-  margin-top: 10px;
-  font-weight: bold;
   min-height: 20px;
 }
 
 #highscore-list {
-  margin-top: 20px;
   max-height: 200px;
   overflow-y: auto;
 }
 
 #highscore-list ul {
   padding: 0;
-  list-style-type: none;
 }
 
 #highscore-list li {
@@ -177,14 +162,14 @@ body {
 
 @media (max-width: 500px) {
   .game-container {
-    width: 90%;
-    height: 90vw;
-    max-width: 400px;
-    max-height: 400px;
+      width: 90%;
+      height: 90vw;
+      max-width: 400px;
+      max-height: 400px;
   }
 
   .settings-popup {
-    width: 90%;
-    max-width: 300px;
+      width: 90%;
+      max-width: 300px;
   }
 }
