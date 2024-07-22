@@ -1,0 +1,190 @@
+:root {
+  --background-color: #121212;
+  --header-background-color: #1e1e1e;
+  --button-background-color: #333;
+  --button-text-color: #fff;
+  --snake-color: #00ff00;
+  --text-color: #ffffff;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: var(--header-background-color);
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+#profile-pic {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--button-background-color);
+  border-radius: 50%;
+}
+
+#profile-emoji {
+  font-size: 24px;
+}
+
+.game-container {
+  display: none;
+  position: relative;
+  width: 400px;
+  height: 400px;
+  background-color: var(--header-background-color);
+  border: 2px solid var(--button-background-color);
+  margin: 20px auto;
+}
+
+.score-container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.gameover-screen {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: var(--text-color);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+.settings-popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  background-color: var(--header-background-color);
+  padding: 20px;
+  border: 2px solid var(--button-background-color);
+  border-radius: 10px;
+  z-index: 10;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.emoji-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.emoji-item {
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.emoji-item:hover {
+  background-color: var(--button-background-color);
+}
+
+.close-btn {
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.btn {
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn:hover {
+  background-color: #444;
+}
+
+#feedback {
+  text-align: center;
+  margin-top: 10px;
+  font-weight: bold;
+  min-height: 20px;
+}
+
+#highscore-list {
+  margin-top: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#highscore-list ul {
+  padding: 0;
+  list-style-type: none;
+}
+
+#highscore-list li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#highscore-list img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+@media (max-width: 500px) {
+  .game-container {
+    width: 90%;
+    height: 90vw;
+    max-width: 400px;
+    max-height: 400px;
+  }
+
+  .settings-popup {
+    width: 90%;
+    max-width: 300px;
+  }
+}
