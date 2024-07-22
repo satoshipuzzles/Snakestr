@@ -90,6 +90,47 @@ export class NostrClient {
     });
   }
 
+  async postHighScore(npub, score, unlockedEmojis) {
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket(this.url);
+
+      ws.onopen = async () => {
+        try {
+          const event = {
+            kind: 69420,
+            pubkey: npub,
+            created_at: Math.floor(Date.now() / 1000),
+            tags: [
+              ["t", "snakegame"],
+              ["s", score.toString()],
+              ["u", unlockedEmojis.join(",")],
+            ],
+            content: `I scored ${score} in the snake game! #snakegame`,
+          };
+
+          // Sign the event using the window.nostr API
+          const signedEvent = await window.nostr.signEvent(event);
+
+          // Send the signed event to the relay
+          ws.send(JSON.stringify(["EVENT", signedEvent]));
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      ws.onmessage = (msg) => {
+        console.log("High score posted:", msg.data);
+        ws.close();
+        resolve(msg.data);
+      };
+
+      ws.onerror = (error) => {
+        console.error("Error posting high score:", error);
+        reject(error);
+      };
+    });
+  }
+
   removeDuplicates(highScores) {
     const seen = new Map();
     return highScores.filter((score) => {
