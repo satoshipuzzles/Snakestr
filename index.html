@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nostr Snake Game</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Nostr Web App with Snake Game</title>
     <style>
         :root {
             --background-color: #121212;
@@ -14,40 +13,79 @@
             --snake-color: #00FF00;
             --text-color: #ffffff;
         }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             height: 100vh;
             background-color: var(--background-color);
             color: var(--text-color);
+            overflow: hidden;
         }
-        .header {
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 10px 20px;
+            box-sizing: border-box;
             background-color: var(--header-background-color);
         }
-        .header img {
+
+        #profile-pic {
             width: 50px;
             height: 50px;
             border-radius: 50%;
+            overflow: hidden;
         }
-        .game-container {
+
+        #profile-pic img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 10px 20px;
+            background-color: var(--button-background-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #game-container {
             display: none;
             position: relative;
-            width: 90%;
+            width: 100%;
             max-width: 400px;
-            height: 90%;
+            height: 100%;
             max-height: 400px;
             background-color: var(--header-background-color);
             border: 2px solid var(--button-background-color);
-            margin: auto;
-            margin-top: 70px;
         }
-        .score-container {
+
+        #score-container {
             position: absolute;
             top: 10px;
             left: 10px;
         }
-        .gameover-screen {
+
+        #score, #highscore {
+            margin: 0;
+        }
+
+        #gameover-screen {
             display: none;
             position: absolute;
             top: 0;
@@ -59,8 +97,38 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            text-align: center;
         }
+
+        #highscore-list {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        #highscore-list ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        #highscore-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        #highscore-list img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        #feedback {
+            margin-top: 10px;
+            color: var(--snake-color);
+        }
+
         .settings-popup {
             display: none;
             position: fixed;
@@ -75,15 +143,18 @@
             z-index: 10;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
+
         .emoji-list {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
         }
+
         .emoji-item {
             font-size: 24px;
             cursor: pointer;
         }
+
         .close-btn {
             background-color: var(--button-background-color);
             color: var(--button-text-color);
@@ -95,42 +166,47 @@
             top: 10px;
             right: 10px;
         }
+
+        @media (max-width: 400px) {
+            #game-container {
+                width: 90%;
+                height: 90%;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="header d-flex justify-content-between align-items-center p-3">
-        <button class="btn btn-dark" id="login-button">Login with Nostr</button>
-        <div class="action-buttons d-flex">
-            <button class="btn btn-dark mr-2" id="restart-button">Restart</button>
-            <button class="btn btn-dark" id="settings-button" style="display: none;">⚙️</button>
+    <div id="header">
+        <button class="action-button" id="login-button">Login with Nostr</button>
+        <div class="action-buttons">
+            <button class="action-button" id="restart-button">Restart</button>
+            <button class="action-button" id="settings-button" style="display: none;">⚙️</button>
         </div>
         <div id="profile-pic">
             <span id="profile-emoji" aria-label="Profile Emoji">🤖</span>
         </div>
     </div>
-    <div class="game-container" id="game-container">
-        <div class="score-container">
+    <div id="game-container">
+        <div id="score-container">
             <p id="score">Score: 0</p>
             <p id="highscore">High Score: 0</p>
         </div>
-        <canvas id="game-canvas" width="400" height="400"></canvas>
-        <div class="gameover-screen d-flex flex-column" id="gameover-screen">
+        <canvas id="game-canvas" width="400" height="400" role="img" aria-label="Snake Game"></canvas>
+        <div id="gameover-screen" role="alert">
             <h2>Game Over</h2>
-            <button class="btn btn-dark mb-3" id="post-score-button">Post High Score</button>
+            <button class="action-button" id="post-score-button">Post High Score</button>
             <div id="highscore-list">
                 <h3>High Scores</h3>
-                <ul class="list-unstyled"></ul>
+                <ul></ul>
             </div>
         </div>
     </div>
-    <div id="feedback" role="status" class="text-center mt-3"></div>
+    <div id="feedback" role="status"></div>
     <div class="settings-popup" id="settings-popup">
         <button class="close-btn">✖️</button>
         <h2>Select Your Snake</h2>
         <div class="emoji-list"></div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const loginButton = document.getElementById('login-button');
@@ -153,6 +229,7 @@
             const snakeHeadEmoji = '🐍';
             const lightningEmoji = '⚡';
             const snakeColor = getComputedStyle(document.documentElement).getPropertyValue('--snake-color');
+
             let npub = null;
             let snake = [{ x: 10, y: 10 }];
             let lightning = { x: 5, y: 5 };
@@ -454,6 +531,8 @@
                     updateEmojiList();
                 }
             }
+
+            startGame(); // Automatically start the game when the page loads
         });
     </script>
 </body>
