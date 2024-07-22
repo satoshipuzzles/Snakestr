@@ -160,6 +160,13 @@ body {
   margin-right: 10px;
 }
 
+.highscore-list img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
 @media (max-width: 500px) {
   .game-container {
       width: 90%;
