@@ -11,16 +11,17 @@ export class SnakeGame {
     this.lastRenderTime = 0;
     this.gameLoopId = null;
     this.electrifiedUntil = 0;
+    this.directionQueue = []; // New: Queue to store direction changes
   }
 
   reset() {
     this.snake = [{ x: 10, y: 10 }];
     this.direction = { x: 0, y: 0 };
-    this.nextDirection = { x: 0, y: 0 };
     this.lightning = this.getRandomPosition();
     this.score = 0;
     this.gameOver = false;
     this.electrifiedUntil = 0;
+    this.directionQueue = []; // Reset direction queue
   }
 
   start() {
@@ -51,8 +52,13 @@ export class SnakeGame {
   }
 
   update() {
-    // Apply the next direction
-    this.direction = this.nextDirection;
+    // Process the next direction from the queue
+    if (this.directionQueue.length > 0) {
+      const nextDir = this.directionQueue.shift();
+      if (this.isValidDirectionChange(this.direction, nextDir)) {
+        this.direction = nextDir;
+      }
+    }
 
     const head = {
       x: this.wrapCoordinate(this.snake[0].x + this.direction.x),
@@ -133,14 +139,6 @@ export class SnakeGame {
   }
 
   changeDirection(newDirection) {
-    const opposites = {
-      ArrowUp: "ArrowDown",
-      ArrowDown: "ArrowUp",
-      ArrowLeft: "ArrowRight",
-      ArrowRight: "ArrowLeft",
-    };
-    if (newDirection === opposites[this.lastDirection]) return;
-
     const directionMap = {
       ArrowUp: { x: 0, y: -1 },
       ArrowDown: { x: 0, y: 1 },
@@ -149,9 +147,13 @@ export class SnakeGame {
     };
 
     if (directionMap[newDirection]) {
-      this.nextDirection = directionMap[newDirection];
-      this.lastDirection = newDirection;
+      // Add new direction to the queue instead of immediately changing
+      this.directionQueue.push(directionMap[newDirection]);
     }
+  }
+
+  isValidDirectionChange(currentDir, newDir) {
+    return currentDir.x + newDir.x !== 0 || currentDir.y + newDir.y !== 0;
   }
 
   onGameOver(score) {

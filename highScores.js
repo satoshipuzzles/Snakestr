@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchHighScores() {
     highscoreList.innerHTML = "";
     loadingIndicator.style.display = "block";
-    const ws = new WebSocket("wss://relay.damus.io");
+    const ws = new WebSocket("wss://nostrpub.yeghro.site");
 
     ws.onopen = () => {
       console.log("WebSocket connected");
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function fetchProfile(pubkey) {
-    const ws = new WebSocket("wss://relay.damus.io");
+    const ws = new WebSocket("wss://nostrpub.yeghro.site");
     return new Promise((resolve, reject) => {
       ws.onopen = () => {
         ws.send(
