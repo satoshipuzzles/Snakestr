@@ -11,7 +11,9 @@ export class SnakeGame {
     this.lastRenderTime = 0;
     this.gameLoopId = null;
     this.electrifiedUntil = 0;
-    this.directionQueue = []; // New: Queue to store direction changes
+    this.directionQueue = []; // Queue to store direction changes
+    this.isPaused = false;
+    this.pauseMenu = document.getElementById("pause-menu");
   }
 
   reset() {
@@ -22,6 +24,7 @@ export class SnakeGame {
     this.gameOver = false;
     this.electrifiedUntil = 0;
     this.directionQueue = []; // Reset direction queue
+    this.isPaused = false;
   }
 
   start() {
@@ -37,6 +40,10 @@ export class SnakeGame {
       }
 
       this.gameLoopId = window.requestAnimationFrame(this.gameLoop.bind(this));
+
+      if (this.isPaused) {
+        return; // Don't update game state if paused
+      }
 
       const secondsSinceLastRender = (currentTime - this.lastRenderTime) / 1000;
       if (secondsSinceLastRender < 1 / (CONFIG.TICK_RATE / 5)) return;
@@ -65,19 +72,26 @@ export class SnakeGame {
       y: this.wrapCoordinate(this.snake[0].y + this.direction.y),
     };
 
+    // Check for collision before adding the new head
     if (this.checkCollision(head)) {
       this.gameOver = true;
       return;
     }
 
+    // Add the new head to the snake
     this.snake.unshift(head);
 
+    // Check if the snake has eaten the food
     if (head.x === this.lightning.x && head.y === this.lightning.y) {
+      // Increase score and generate new food
       this.score++;
+      this.updateScoreDisplay();
       this.lightning = this.getRandomPosition();
       this.onScoreUpdate(this.score);
       this.electrifiedUntil = Date.now() + CONFIG.ELECTRIFIED_DURATION;
+      // Don't remove the tail when food is eaten
     } else {
+      // Remove the tail if no food was eaten
       this.snake.pop();
     }
   }
@@ -132,10 +146,20 @@ export class SnakeGame {
   }
 
   getRandomPosition() {
-    return {
-      x: Math.floor(Math.random() * CONFIG.GAME_SIZE),
-      y: Math.floor(Math.random() * CONFIG.GAME_SIZE),
-    };
+    let newPosition;
+    do {
+      newPosition = {
+        x: Math.floor(Math.random() * CONFIG.GAME_SIZE),
+        y: Math.floor(Math.random() * CONFIG.GAME_SIZE),
+      };
+    } while (this.isPositionOccupied(newPosition));
+    return newPosition;
+  }
+
+  isPositionOccupied(position) {
+    return this.snake.some(
+      (segment) => segment.x === position.x && segment.y === position.y
+    );
   }
 
   changeDirection(newDirection) {
@@ -156,11 +180,44 @@ export class SnakeGame {
     return currentDir.x + newDir.x !== 0 || currentDir.y + newDir.y !== 0;
   }
 
+  togglePause() {
+    this.isPaused = !this.isPaused;
+    if (this.isPaused) {
+      this.pauseMenu.style.display = "flex";
+    } else {
+      this.pauseMenu.style.display = "none";
+    }
+  }
+
+  resumeGame() {
+    if (this.isPaused) {
+      this.togglePause();
+    }
+  }
+
+  restartGame() {
+    this.reset();
+    this.resumeGame();
+  }
+
+  navigateToHighscores() {
+    this.isPaused = false;
+    this.gameOver = true;
+    window.location.href = "highscores.html";
+  }
+
+  updateScoreDisplay() {
+    // This method should be implemented to update the score display in your UI
+    console.log(`Score: ${this.score}`);
+  }
+
   onGameOver(score) {
     // This method can be overridden from outside to handle game over events
+    console.log(`Game Over. Final Score: ${score}`);
   }
 
   onScoreUpdate(score) {
     // This method can be overridden from outside to handle score updates
+    console.log(`Score Updated: ${score}`);
   }
 }
