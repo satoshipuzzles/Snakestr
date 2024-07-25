@@ -14,6 +14,60 @@ export class SnakeGame {
     this.directionQueue = []; // Queue to store direction changes
     this.isPaused = false;
     this.pauseMenu = document.getElementById("pause-menu");
+    this.touchStartX = 0;
+    this.touchStartY = 0;
+    this.canvas.addEventListener(
+      "touchstart",
+      this.handleTouchStart.bind(this),
+      false
+    );
+    this.canvas.addEventListener(
+      "touchmove",
+      this.handleTouchMove.bind(this),
+      false
+    );
+  }
+
+  handleTouchStart(event) {
+    event.preventDefault();
+    const touch = event.touches[0];
+    this.touchStartX = touch.clientX;
+    this.touchStartY = touch.clientY;
+  }
+
+  handleTouchMove(event) {
+    if (!this.touchStartX || !this.touchStartY) {
+      return;
+    }
+
+    event.preventDefault();
+    const touch = event.touches[0];
+    const touchEndX = touch.clientX;
+    const touchEndY = touch.clientY;
+
+    const dx = touchEndX - this.touchStartX;
+    const dy = touchEndY - this.touchStartY;
+
+    // Determine swipe direction based on which axis has a larger difference
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal swipe
+      if (dx > 0) {
+        this.changeDirection("ArrowRight");
+      } else {
+        this.changeDirection("ArrowLeft");
+      }
+    } else {
+      // Vertical swipe
+      if (dy > 0) {
+        this.changeDirection("ArrowDown");
+      } else {
+        this.changeDirection("ArrowUp");
+      }
+    }
+
+    // Reset touch start coordinates
+    this.touchStartX = 0;
+    this.touchStartY = 0;
   }
 
   reset() {
