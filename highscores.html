@@ -1,152 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>High Scores</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-            background-color: #121212;
-            color: #ffffff;
-            overflow: hidden;
-        }
-        #header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            padding: 10px 20px;
-            background-color: #1e1e1e;
-            position: fixed;
-            top: 0;
-            z-index: 10;
-        }
-        #highscore-list {
-            margin-top: 60px;
-            text-align: left;
-            width: 100%;
-            overflow-y: auto;
-            max-height: calc(100vh - 60px);
-        }
-        #highscore-list ul {
-            padding: 0;
-            list-style: none;
-        }
-        #highscore-list li {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        #highscore-list img {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-        .action-button {
-            padding: 5px 10px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #loading {
-            margin-top: 80px;
-        }
-    </style>
-</head>
-<body>
-    <div id="header">
-        <button class="action-button" id="back-button">Back</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>High Scores - Nostr Snake Game</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container mt-4">
+      <div
+        class="header d-flex justify-content-between align-items-center mb-4"
+      >
+        <button class="btn btn-dark" id="back-button">Back to Game</button>
+        <h1>High Scores</h1>
+      </div>
+      <div id="loading" class="text-center">Loading high scores...</div>
+      <div id="highscore-list" class="mt-4">
+        <ul class="list-unstyled">
+          <!-- High scores will be inserted here by JavaScript -->
+        </ul>
+      </div>
     </div>
-    <div id="loading">Loading...</div>
-    <div id="highscore-list">
-        <h3>High Scores</h3>
-        <ul></ul>
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const highscoreList = document.getElementById('highscore-list').querySelector('ul');
-            const backButton = document.getElementById('back-button');
-            const loadingIndicator = document.getElementById('loading');
-
-            backButton.addEventListener('click', () => {
-                window.history.back();
-            });
-
-            async function fetchHighScores() {
-                highscoreList.innerHTML = '';
-                const ws = new WebSocket('wss://relay.damus.io');
-                ws.onopen = () => {
-                    ws.send(JSON.stringify(["REQ", "2", { kinds: [69420] }]));
-                };
-                ws.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    if (data[0] === "EVENT" && data[2].content) {
-                        const scoreTag = data[2].tags.find(tag => tag[0] === 's');
-                        if (scoreTag) {
-                            const score = scoreTag[1];
-                            const profile = data[2].pubkey;
-                            fetchProfile(profile).then(profileData => {
-                                const li = document.createElement('li');
-                                li.innerHTML = `
-                                    <img src="${profileData.picture}" alt="Profile Picture">
-                                    <span>${profileData.name || profile}</span>: ${score}
-                                `;
-                                highscoreList.appendChild(li);
-                                sortHighScores();
-                            });
-                        }
-                    }
-                };
-                ws.onerror = (error) => {
-                    console.error('Error fetching high scores:', error);
-                };
-                ws.onclose = () => {
-                    loadingIndicator.style.display = 'none';
-                };
-            }
-
-            async function fetchProfile(npub) {
-                return new Promise((resolve, reject) => {
-                    const ws = new WebSocket('wss://relay.damus.io');
-                    ws.onopen = () => {
-                        ws.send(JSON.stringify(["REQ", "1", { kinds: [0], authors: [npub] }]));
-                    };
-                    ws.onmessage = (event) => {
-                        const data = JSON.parse(event.data);
-                        if (data[0] === "EVENT" && data[2].content) {
-                            const profile = JSON.parse(data[2].content);
-                            ws.close();
-                            resolve(profile);
-                        }
-                    };
-                    ws.onerror = (error) => {
-                        reject(error);
-                    };
-                });
-            }
-
-            function sortHighScores() {
-                const highScores = Array.from(highscoreList.children);
-                highScores.sort((a, b) => {
-                    const scoreA = parseInt(a.textContent.split(': ')[1], 10);
-                    const scoreB = parseInt(b.textContent.split(': ')[1], 10);
-                    return scoreB - scoreA;
-                });
-                highScores.forEach(li => highscoreList.appendChild(li));
-            }
-
-            fetchHighScores();
-        });
-    </script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="highScores.js"></script>
+  </body>
 </html>
