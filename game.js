@@ -14,18 +14,30 @@ export class SnakeGame {
     this.directionQueue = []; // Queue to store direction changes
     this.isPaused = false;
     this.pauseMenu = document.getElementById("pause-menu");
+    this.lastDirection = { x: 0, y: 0 };
+    this.nextDirection = { x: 0, y: 0 };
+    this.directionQueue = [];
+    // Touch event handling
     this.touchStartX = 0;
     this.touchStartY = 0;
+    this.addTouchListeners();
+
+    // Keyboard event handling
+    window.addEventListener("keydown", this.handleKeydown.bind(this));
+  }
+
+  addTouchListeners() {
     this.canvas.addEventListener(
       "touchstart",
       this.handleTouchStart.bind(this),
-      false
+      { passive: false }
     );
-    this.canvas.addEventListener(
-      "touchmove",
-      this.handleTouchMove.bind(this),
-      false
-    );
+    this.canvas.addEventListener("touchmove", this.handleTouchMove.bind(this), {
+      passive: false,
+    });
+    this.canvas.addEventListener("touchend", this.handleTouchEnd.bind(this), {
+      passive: false,
+    });
   }
 
   handleTouchStart(event) {
@@ -36,38 +48,57 @@ export class SnakeGame {
   }
 
   handleTouchMove(event) {
+    event.preventDefault();
+  }
+
+  handleTouchEnd(event) {
+    event.preventDefault();
     if (!this.touchStartX || !this.touchStartY) {
       return;
     }
 
-    event.preventDefault();
-    const touch = event.touches[0];
+    const touch = event.changedTouches[0];
     const touchEndX = touch.clientX;
     const touchEndY = touch.clientY;
 
     const dx = touchEndX - this.touchStartX;
     const dy = touchEndY - this.touchStartY;
 
-    // Determine swipe direction based on which axis has a larger difference
-    if (Math.abs(dx) > Math.abs(dy)) {
+    // Minimum swipe distance to trigger direction change
+    const minSwipeDistance = 30;
+
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > minSwipeDistance) {
       // Horizontal swipe
-      if (dx > 0) {
-        this.changeDirection("ArrowRight");
-      } else {
-        this.changeDirection("ArrowLeft");
-      }
-    } else {
+      this.changeDirection(dx > 0 ? "ArrowRight" : "ArrowLeft");
+    } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > minSwipeDistance) {
       // Vertical swipe
-      if (dy > 0) {
-        this.changeDirection("ArrowDown");
-      } else {
-        this.changeDirection("ArrowUp");
-      }
+      this.changeDirection(dy > 0 ? "ArrowDown" : "ArrowUp");
     }
 
     // Reset touch start coordinates
     this.touchStartX = 0;
     this.touchStartY = 0;
+  }
+
+  handleKeydown(event) {
+    const key = event.key;
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+      event.preventDefault();
+      this.changeDirection(key);
+    }
+  }
+
+  queueDirectionChange(newDirection) {
+    const directionMap = {
+      ArrowUp: { x: 0, y: -1 },
+      ArrowDown: { x: 0, y: 1 },
+      ArrowLeft: { x: -1, y: 0 },
+      ArrowRight: { x: 1, y: 0 },
+    };
+
+    if (directionMap[newDirection]) {
+      this.nextDirection = directionMap[newDirection];
+    }
   }
 
   reset() {
@@ -80,7 +111,6 @@ export class SnakeGame {
     this.directionQueue = []; // Reset direction queue
     this.isPaused = false;
   }
-
   start() {
     this.reset();
     this.gameLoop();
@@ -100,7 +130,7 @@ export class SnakeGame {
       }
 
       const secondsSinceLastRender = (currentTime - this.lastRenderTime) / 1000;
-      if (secondsSinceLastRender < 1 / (CONFIG.TICK_RATE / 5)) return;
+      if (secondsSinceLastRender < 1 / CONFIG.TICK_RATE) return;
 
       this.lastRenderTime = currentTime;
 
@@ -113,11 +143,17 @@ export class SnakeGame {
   }
 
   update() {
-    // Process the next direction from the queue
-    if (this.directionQueue.length > 0) {
+    // Apply the next direction if it's set
+    if (this.nextDirection.x !== 0 || this.nextDirection.y !== 0) {
+      this.direction = this.nextDirection;
+      this.lastDirection = this.direction;
+      this.nextDirection = { x: 0, y: 0 };
+    } else if (this.directionQueue.length > 0) {
+      // If no immediate direction, check the queue
       const nextDir = this.directionQueue.shift();
-      if (this.isValidDirectionChange(this.direction, nextDir)) {
+      if (this.isValidDirectionChange(this.lastDirection, nextDir)) {
         this.direction = nextDir;
+        this.lastDirection = this.direction;
       }
     }
 
@@ -225,13 +261,23 @@ export class SnakeGame {
     };
 
     if (directionMap[newDirection]) {
-      // Add new direction to the queue instead of immediately changing
-      this.directionQueue.push(directionMap[newDirection]);
+      const proposedDirection = directionMap[newDirection];
+      if (this.isValidDirectionChange(this.lastDirection, proposedDirection)) {
+        // If it's a valid change from the last direction, apply it immediately
+        this.nextDirection = proposedDirection;
+      } else if (this.directionQueue.length === 0) {
+        // If it's not valid now, but the queue is empty, queue it for the next update
+        this.directionQueue.push(proposedDirection);
+      }
+      // If neither condition is met, ignore the input (prevents queue flooding)
     }
   }
 
   isValidDirectionChange(currentDir, newDir) {
-    return currentDir.x + newDir.x !== 0 || currentDir.y + newDir.y !== 0;
+    return (
+      (currentDir.x + newDir.x !== 0 || currentDir.y + newDir.y !== 0) &&
+      (newDir.x !== 0 || newDir.y !== 0)
+    );
   }
 
   togglePause() {
