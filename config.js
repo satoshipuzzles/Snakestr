@@ -1,5 +1,5 @@
 export const CONFIG = {
-  WEBSOCKET_URL: "wss://nostrpub.yeghro.site",
+  WEBSOCKET_URL: "wss://relay.damus.io",
   GAME_SIZE: 40,
   TICK_RATE: 20,
   CANVAS_SIZE: 400,
