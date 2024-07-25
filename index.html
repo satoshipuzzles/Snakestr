@@ -20,17 +20,19 @@
     </header>
     
     <main>
-      <div class="game-container" id="game-container">
+      <div class="game-area">
+        <div class="game-container" id="game-container">
+          <canvas id="game-canvas"></canvas>
+          <div class="gameover-screen" id="gameover-screen">
+            <h2>Game Over</h2>
+            <p id="final-score"></p>
+            <button class="btn btn-dark mb-3" id="post-score-button">Post High Score</button>
+            <button class="btn btn-dark mb-3" id="view-highscores-button">View High Scores</button>
+          </div>
+        </div>
         <div class="score-container">
           <p id="score">Score: 0</p>
           <p id="highscore">High Score: 0</p>
-        </div>
-        <canvas id="game-canvas"></canvas>
-        <div class="gameover-screen" id="gameover-screen">
-          <h2>Game Over</h2>
-          <p id="final-score"></p>
-          <button class="btn btn-dark mb-3" id="post-score-button">Post High Score</button>
-          <button class="btn btn-dark mb-3" id="view-highscores-button">View High Scores</button>
         </div>
       </div>
       
