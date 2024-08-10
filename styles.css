@@ -24,6 +24,11 @@ body {
   background-color: var(--header-background-color);
 }
 
+#profile-container {
+  position: relative;
+  display: inline-block;
+}
+
 #profile-pic {
   width: 40px;
   height: 40px;
@@ -32,17 +37,51 @@ body {
   justify-content: center;
   background-color: #000000;
   border-radius: 50%;
-  overflow: hidden;
+  cursor: pointer;
+  z-index: 2;
 }
 
 #profile-pic img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
-#profile-emoji {
-  font-size: 24px;
+.recent-scores {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  background-color: var(--header-background-color);
+  border: 1px solid var(--button-background-color);
+  border-radius: 5px;
+  padding: 10px;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+  z-index: 1;
+  transform: translateX(100%);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.recent-scores.open {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.recent-scores h6 {
+  margin-top: 0;
+}
+
+.recent-scores ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recent-scores li {
+  margin-bottom: 5px;
 }
 
 .game-area {
@@ -159,20 +198,13 @@ body {
   padding: 0;
 }
 
-#highscore-list li {
+#highscore-list li, .highscore-list li {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
 }
 
-#highscore-list img {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-.highscore-list img {
+#highscore-list img, .highscore-list img {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -185,16 +217,17 @@ body {
     align-items: center;
   }
 
-  .game-container {
+  .game-container, .score-container {
     width: 90%;
-    height: 90vw;
     max-width: 600px;
+  }
+
+  .game-container {
+    height: 90vw;
     max-height: 600px;
   }
 
   .score-container {
-    width: 90%;
-    max-width: 600px;
     margin-top: 20px;
   }
 
