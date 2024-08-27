@@ -141,4 +141,48 @@ export class NostrClient {
       return true;
     });
   }
+
+  async fetchUserHighScores(pubkey) {
+    return new Promise((resolve, reject) => {
+      const requestId = Math.random().toString(36).substring(7);
+      const req = [
+        "REQ",
+        requestId,
+        { kinds: [69420], authors: [pubkey], limit: 50 }, // Increased limit to get more scores
+      ];
+
+      this.ws.send(JSON.stringify(req));
+
+      const scores = [];
+      const handler = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log("Received data:", data);
+          if (data[0] === "EVENT" && data[1] === requestId) {
+            const scoreTag = data[2].tags.find((tag) => tag[0] === "s");
+            if (scoreTag) {
+              const score = parseInt(scoreTag[1], 10); // Parse score as integer
+              scores.push(score);
+              console.log("Added score:", score);
+            }
+          } else if (data[0] === "EOSE" && data[1] === requestId) {
+            this.ws.removeEventListener("message", handler);
+            const sortedScores = scores.sort((a, b) => b - a); // Sort scores in descending order
+            const topScores = sortedScores.slice(0, 5); // Get top 5 scores
+            resolve(topScores);
+          }
+        } catch (error) {
+          console.error("Error processing message:", error);
+          reject(error);
+        }
+      };
+
+      this.ws.addEventListener("message", handler);
+
+      setTimeout(() => {
+        this.ws.removeEventListener("message", handler);
+        reject(new Error("Timeout fetching user's high scores"));
+      }, 5000);
+    });
+  }
 }
