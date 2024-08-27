@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Snake Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        #header {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            background-color: #333;
+            padding: 10px;
+        }
+
+        .player-profile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .player-profile img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            background-color: #666;
+        }
+
+        #game-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        canvas {
+            border: 1px solid #fff;
+            background-color: #222;
+            max-width: 100%;
+            height: auto;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        #countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5em;
+            display: none;
+        }
+
+        #game-link-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #game-link {
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            margin-right: 10px;
+        }
+
+        #copy-icon {
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        #scoreboard {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding: 10px;
+        }
+
+        .score-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .lives {
+            font-size: 1.5em;
+        }
+
+        @media (max-width: 768px) {
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+
+            #countdown {
+                font-size: 3em;
+            }
+        }
+    </style>
+</head>
+<body onload="initializeGame()">
+    <div id="header">
+        <div id="player1" class="player-profile">
+            <img id="player1-pic" src="https://via.placeholder.com/50?text=🤖" alt="Player 1">
+            <span id="player1-name">Player 1</span>
+        </div>
+        <div id="player2" class="player-profile">
+            <img id="player2-pic" src="https://via.placeholder.com/50?text=🤖" alt="Player 2">
+            <span id="player2-name">Player 2</span>
+        </div>
+    </div>
+    <div id="scoreboard">
+        <div class="score-container" id="player1-score-container">
+            <div id="player1-score">Player 1 Score: 0</div>
+            <div id="player1-lives">❤️❤️❤️</div>
+        </div>
+        <div class="score-container" id="player2-score-container">
+            <div id="player2-score">Player 2 Score: 0</div>
+            <div id="player2-lives">❤️❤️❤️</div>
+        </div>
+    </div>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="countdown">5</div>
+    </div>
+    <button id="nostrSignInButton" onclick="nostrSignIn()">Sign in with Nostr</button>
+    <button id="generateLinkButton" onclick="generateGameLink()">Generate Game Link</button>
+    <div id="game-link-container">
+        <input type="text" id="game-link" readonly>
+        <span id="copy-icon">📋</span>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const snake1 = [{ x: 100, y: 100 }];
+        const snake2 = [{ x: 500, y: 300 }];
+        let direction1 = 'RIGHT';
+        let direction2 = 'LEFT';
+        const food = { x: Math.floor(Math.random() * (canvas.width / 20)) * 20, y: Math.floor(Math.random() * (canvas.height / 20)) * 20 };
+        let score1 = 0;
+        let score2 = 0;
+        let lives1 = 3;
+        let lives2 = 3;
+        let gameStarted = false;
+        let countdownInterval;
+        let gameInterval;
+        let scoreInterval;
+        let gameId = null;
+        let hostPubkey = null;
+        let guestPubkey = null;
+        let players = new Set();
+        let localPubkey = null;
+
+        document.addEventListener('keydown', changeDirection);
+
+        function changeDirection(event) {
+            if (localPubkey === hostPubkey) {
+                if (event.keyCode === 37 && direction1 !== 'RIGHT') direction1 = 'LEFT'; // Player 1 Left
+                if (event.keyCode === 38 && direction1 !== 'DOWN') direction1 = 'UP';   // Player 1 Up
+                if (event.keyCode === 39 && direction1 !== 'LEFT') direction1 = 'RIGHT'; // Player 1 Right
+                if (event.keyCode === 40 && direction1 !== 'UP') direction1 = 'DOWN';   // Player 1 Down
+            } else if (localPubkey === guestPubkey) {
+                if (event.keyCode === 65 && direction2 !== 'RIGHT') direction2 = 'LEFT'; // Player 2 Left (A)
+                if (event.keyCode === 87 && direction2 !== 'DOWN') direction2 = 'UP';   // Player 2 Up (W)
+                if (event.keyCode === 68 && direction2 !== 'LEFT') direction2 = 'RIGHT'; // Player 2 Right (D)
+                if (event.keyCode === 83 && direction2 !== 'UP') direction2 = 'DOWN';   // Player 2 Down (S)
+            }
+
+            const directionChange = {
+                gameId: gameId,
+                type: 'move',
+                player: localPubkey,
+                direction: localPubkey === hostPubkey ? direction1 : direction2
+            };
+            socket.send(JSON.stringify(directionChange));
+        }
+
+        function drawSnake(snake, emoji) {
+            ctx.font = '20px Arial';
+            snake.forEach(part => {
+                ctx.fillText(emoji, part.x, part.y);
+            });
+        }
+
+        function moveSnake(snake, direction) {
+            const head = { x: snake[0].x, y: snake[0].y };
+            if (direction === 'LEFT') head.x -= 20;
+            if (direction === 'UP') head.y -= 20;
+            if (direction === 'RIGHT') head.x += 20;
+            if (direction === 'DOWN') head.y += 20;
+
+            // Wrap around walls
+            if (head.x < 0) head.x = canvas.width - 20;
+            if (head.x >= canvas.width) head.x = 0;
+            if (head.y < 0) head.y = canvas.height - 20;
+            if (head.y >= canvas.height) head.y = 0;
+
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                food.x = Math.floor(Math.random() * (canvas.width / 20)) * 20;
+                food.y = Math.floor(Math.random() * (canvas.height / 20)) * 20;
+                return true;
+            } else {
+                snake.pop();
+                return false;
+            }
+        }
+
+        function drawFood() {
+            ctx.fillText('⚡️', food.x, food.y);
+        }
+
+        function checkCollision(snake) {
+            for (let i = 4; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+            }
+            return false;
+        }
+
+        function checkSnakeCollision(snake1, snake2) {
+            for (let i = 0; i < snake1.length; i++) {
+                if (snake1[i].x === snake2[0].x && snake1[i].y === snake2[0].y) return true;
+            }
+            for (let i = 0; i < snake2.length; i++) {
+                if (snake2[i].x === snake1[0].x && snake2[i].y === snake1[0].y) return true;
+            }
+            return false;
+        }
+
+        function gameLoop() {
+            if (!gameStarted) return;
+
+            if (checkCollision(snake1) || checkCollision(snake2) || checkSnakeCollision(snake1, snake2)) {
+                handleCollision();
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawSnake(snake1, '🐍');
+                drawSnake(snake2, '🐉');
+                drawFood();
+                if (moveSnake(snake1, direction1)) score1++;
+                if (moveSnake(snake2, direction2)) score2++;
+            }
+        }
+
+        function handleCollision() {
+            if (checkCollision(snake1) || checkSnakeCollision(snake1, snake2)) {
+                lives1--;
+                updateScoreboard();
+                if (lives1 === 0) {
+                    endGame('Player 2');
+                }
+            }
+
+            if (checkCollision(snake2) || checkSnakeCollision(snake2, snake1)) {
+                lives2--;
+                updateScoreboard();
+                if (lives2 === 0) {
+                    endGame('Player 1');
+                }
+            }
+
+            if (lives1 > 0 && lives2 > 0) {
+                resetGame();
+            }
+        }
+
+        function resetGame() {
+            snake1.length = 1;
+            snake2.length = 1;
+            direction1 = 'RIGHT';
+            direction2 = 'LEFT';
+            snake1[0] = { x: 100, y: 100 };
+            snake2[0] = { x: 500, y: 300 };
+        }
+
+        function endGame(winner) {
+            clearInterval(gameInterval);
+            clearInterval(scoreInterval);
+            alert(`${winner} wins!`);
+            if (winner === 'Player 1') {
+                score1 += 21;
+            } else {
+                score2 += 21;
+            }
+            updateScoreboard();
+        }
+
+        function startGame(gameId, hostPubkey, guestPubkey) {
+            const relay = "wss://relay.damus.io";
+            socket = new WebSocket(relay);
+
+            socket.onopen = function() {
+                console.log('Connected to Nostr relay');
+                const filter = {
+                    kinds: [11111111111111],
+                    "#game": [gameId]
+                };
+                socket.send(JSON.stringify(["REQ", "game_state", filter]));
+            };
+
+            socket.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                if (message[0] === "EVENT") {
+                    const gameState = JSON.parse(message[2].content);
+                    console.log("Received game state:", gameState);
+
+                    // Update game state based on received data
+                    if (gameState.player === hostPubkey) {
+                        direction1 = gameState.direction;
+                    } else {
+                        direction2 = gameState.direction;
+                    }
+
+                    moveSnake(gameState.player === hostPubkey ? snake1 : snake2, gameState.direction);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    drawSnake(snake1, '🐍');
+                    drawSnake(snake2, '🐉');
+                    drawFood();
+                }
+            };
+
+            document.addEventListener('keydown', changeDirection);
+
+            startCountdown();
+            gameInterval = setInterval(gameLoop, 100);
+            scoreInterval = setInterval(updateScore, 1000);
+        }
+
+        function startCountdown() {
+            const countdownElement = document.getElementById('countdown');
+            countdownElement.style.display = 'block';
+            let countdown = 5;
+            countdownElement.innerText = countdown;
+
+            countdownInterval = setInterval(() => {
+                countdown--;
+                countdownElement.innerText = countdown;
+
+                if (countdown === 0) {
+                    clearInterval(countdownInterval);
+                    countdownElement.style.display = 'none';
+                    gameStarted = true;
+                }
+            }, 1000);
+        }
+
+        function updateScore() {
+            if (gameStarted) {
+                score1++;
+                score2++;
+                updateScoreboard();
+            }
+        }
+
+        function updateScoreboard() {
+            document.getElementById('player1-score').innerText = `Player 1 Score: ${score1}`;
+            document.getElementById('player1-lives').innerText = '❤️'.repeat(lives1);
+            document.getElementById('player2-score').innerText = `Player 2 Score: ${score2}`;
+            document.getElementById('player2-lives').innerText = '❤️'.repeat(lives2);
+        }
+
+        // Nostr Integration
+        async function nostrSignIn() {
+            if (window.nostr) {
+                const pubkey = await window.nostr.getPublicKey();
+                if (players.has(pubkey)) {
+                    alert("This player is already logged in.");
+                    return;
+                }
+                players.add(pubkey);
+                console.log("Public Key:", pubkey);
+                localPubkey = pubkey;
+                localStorage.setItem('nostrPubKey', pubkey);
+
+                const profile = await fetchProfile(pubkey);
+                displayProfile(profile, localPubkey === hostPubkey ? 'player1' : 'player2');
+            } else {
+                alert("Nostr extension not found.");
+            }
+        }
+
+        async function fetchProfile(pubkey) {
+            const relay = "wss://relay.damus.io";
+            const ws = new WebSocket(relay);
+            const profile = { pubkey: pubkey, name: 'Unknown', picture: '' };
+
+            ws.onopen = function() {
+                const filter = {
+                    kinds: [0],
+                    authors: [pubkey]
+                };
+                ws.send(JSON.stringify(["REQ", "profile", filter]));
+            };
+
+            ws.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                if (message[0] === "EVENT") {
+                    const profileEvent = message[2];
+                    const metadata = JSON.parse(profileEvent.content);
+                    profile.name = metadata.name || 'Unknown';
+                    profile.picture = metadata.picture || '';
+                    ws.close();
+                }
+            };
+
+            return new Promise((resolve) => {
+                ws.onclose = function() {
+                    resolve(profile);
+                };
+            });
+        }
+
+        function displayProfile(profile, playerId) {
+            document.getElementById(`${playerId}-name`).innerText = profile.name;
+            document.getElementById(`${playerId}-pic`).src = profile.picture;
+        }
+
+        async function generateGameLink() {
+            const pubkey = localStorage.getItem('nostrPubKey');
+            gameId = Math.random().toString(36).substr(2, 9);
+            const link = `https://zaplinks.lol/snakes/?game=${gameId}&host=${pubkey}`;
+            const gameLinkInput = document.getElementById('game-link');
+            const gameLinkContainer = document.getElementById('game-link-container');
+            gameLinkInput.value = link;
+            gameLinkContainer.style.display = 'block';
+
+            document.getElementById('copy-icon').addEventListener('click', () => {
+                navigator.clipboard.writeText(link).then(() => {
+                    alert('Game link copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy link to clipboard: ', err);
+                });
+            });
+
+            await postGameInvitation(gameId, pubkey);
+            window.location.href = link; // Ensure the host joins the room
+        }
+
+        async function postGameInvitation(gameId, hostPubkey) {
+            const relay = "wss://relay.damus.io";
+            const ws = new WebSocket(relay);
+
+            ws.onopen = function() {
+                const event = {
+                    id: Math.random().toString(36).substr(2, 9),  // Ensure 'id' is included
+                    kind: 11111111111111,
+                    pubkey: hostPubkey,
+                    created_at: Math.floor(Date.now() / 1000),
+                    tags: [["game", "invitation"]],
+                    content: JSON.stringify({ gameId: gameId, host: hostPubkey })
+                };
+                ws.send(JSON.stringify(["EVENT", event]));
+            };
+
+            ws.onmessage = function(event) {
+                console.log("Invitation posted:", event.data);
+                ws.close();
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        async function joinGame() {
+            const urlParams = new URLSearchParams(window.location.search);
+            gameId = urlParams.get('game');
+            hostPubkey = urlParams.get('host');
+
+            if (gameId && hostPubkey) {
+                await nostrSignIn();
+                guestPubkey = localStorage.getItem('nostrPubKey');
+                if (hostPubkey === guestPubkey) {
+                    alert("You cannot join the game with the same public key.");
+                    return;
+                }
+                const hostProfile = await fetchProfile(hostPubkey);
+                displayProfile(hostProfile, 'player1');
+
+                const guestProfile = await fetchProfile(guestPubkey);
+                displayProfile(guestProfile, 'player2');
+
+                startGame(gameId, hostPubkey, guestPubkey);
+            }
+        }
+
+        function initializeGame() {
+            const urlParams = new URLSearchParams(window.location.search);
+            gameId = urlParams.get('game');
+            if (gameId) {
+                document.getElementById('generateLinkButton').style.display = 'none';
+                document.getElementById('nostrSignInButton').style.display = 'none';
+                joinGame();
+            }
+        }
+
+        // Adding event listeners for debugging
+        window.addEventListener('error', (event) => {
+            console.error('Error event:', event);
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled rejection:', event);
+        });
+
+        // For debugging WebSocket connections
+        WebSocket.prototype._send = WebSocket.prototype.send;
+        WebSocket.prototype.send = function(data) {
+            console.log('WebSocket send:', data);
+            this._send(data);
+        };
+
+        WebSocket.prototype._onmessage = WebSocket.prototype.onmessage;
+        WebSocket.prototype.onmessage = function(event) {
+            console.log('WebSocket message:', event.data);
+            this._onmessage(event);
+        };
+    </script>
+</body>
+</html>

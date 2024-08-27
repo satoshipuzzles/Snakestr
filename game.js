@@ -1,323 +1,463 @@
-import { CONFIG } from "./config.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word List Marketplace</title>
+    <style>
+        body {
+            background-color: #EF8C56;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            position: relative;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+        .word-list {
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            background-color: #ffffff;
+            color: #000000;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .word-list-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .word-list-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .username {
+            margin-right: 10px;
+            color: #888;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .word-list-name {
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        .word-list p {
+            margin: 0;
+            font-size: 14px;
+        }
+        .author-npub {
+            font-size: 12px;
+            color: #888;
+            word-break: break-all;
+        }
+        .buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .buttons button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .buttons button:hover {
+            background-color: #45a049;
+        }
+        .buttons button.delete {
+            background-color: #f44336;
+        }
+        .buttons button.delete:hover {
+            background-color: #e41e10;
+        }
+        .header {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-button {
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #ffffff;
+        }
+        #profile-pic img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .hidden {
+            display: none;
+        }
+        .iframe-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .iframe-container iframe {
+            width: 80%;
+            height: 80%;
+        }
+        .iframe-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 5px;
+            align-self: flex-start;
+        }
+        .modal-label {
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 10px;
+        }
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background-color: #ffffff;
+            color: #1f1f1f;
+            resize: none;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="header-button" onclick="goHome()">🏡</button>
+        <div class="header-button" onclick="openIframe()">⚡️</div>
+        <div id="profile-pic" class="hidden">
+            <span id="profile-emoji">🤖</span>
+        </div>
+    </div>
+    <div class="container">
+        <h1>Word List Marketplace</h1>
+        <div id="marketplace-list">
+            <!-- Marketplace word lists will be displayed here -->
+        </div>
+    </div>
 
-export class SnakeGame {
-  constructor(canvasId) {
-    this.canvas = document.getElementById(canvasId);
-    this.ctx = this.canvas.getContext("2d");
-    this.canvas.width = CONFIG.CANVAS_SIZE;
-    this.canvas.height = CONFIG.CANVAS_SIZE;
-    this.cellSize = CONFIG.CANVAS_SIZE / CONFIG.GAME_SIZE;
-    this.reset();
-    this.lastRenderTime = 0;
-    this.gameLoopId = null;
-    this.electrifiedUntil = 0;
-    this.directionQueue = []; // Queue to store direction changes
-    this.isPaused = false;
-    this.pauseMenu = document.getElementById("pause-menu");
-    this.lastDirection = { x: 0, y: 0 };
-    this.nextDirection = { x: 0, y: 0 };
-    this.directionQueue = [];
-    // Touch event handling
-    this.touchStartX = 0;
-    this.touchStartY = 0;
-    this.addTouchListeners();
+    <div id="iframeContainer" class="iframe-container">
+        <iframe id="iframe" src="about:blank" frameborder="0"></iframe>
+        <button class="iframe-close" onclick="closeIframe()">✖️</button>
+    </div>
 
-    // Keyboard event handling
-    window.addEventListener("keydown", this.handleKeydown.bind(this));
-  }
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Edit Word List</h2>
+            <label for="modalListName" class="modal-label">List Name:</label>
+            <input type="text" id="modalListName" class="modal-input">
+            <label for="modalCustomWords" class="modal-label">Enter words separated by commas:</label>
+            <textarea id="modalCustomWords" class="modal-input" placeholder="Enter words separated by commas"></textarea>
+            <label for="modalColorPicker" class="modal-label">Select a color for the list:</label>
+            <input type="color" id="modalColorPicker" value="#6FEF65">
+            <button class="modal-button" id="saveAndPublishButton">Save and Publish</button>
+        </div>
+    </div>
 
-  addTouchListeners() {
-    this.canvas.addEventListener(
-      "touchstart",
-      this.handleTouchStart.bind(this),
-      { passive: false }
-    );
-    this.canvas.addEventListener("touchmove", this.handleTouchMove.bind(this), {
-      passive: false,
-    });
-    this.canvas.addEventListener("touchend", this.handleTouchEnd.bind(this), {
-      passive: false,
-    });
-  }
+    <script>
+        let npub = null;
+        let customWordLists = JSON.parse(localStorage.getItem('customWordLists')) || [];
+        let editIndex = null;
 
-  handleTouchStart(event) {
-    event.preventDefault();
-    const touch = event.touches[0];
-    this.touchStartX = touch.clientX;
-    this.touchStartY = touch.clientY;
-  }
+        document.addEventListener('DOMContentLoaded', async () => {
+            const profilePic = document.getElementById('profile-pic');
+            const storedProfile = JSON.parse(localStorage.getItem('profile'));
 
-  handleTouchMove(event) {
-    event.preventDefault();
-  }
+            if (storedProfile) {
+                npub = storedProfile.npub;
+                profilePic.innerHTML = `<img src="${storedProfile.picture}" alt="Profile Picture">`;
+                profilePic.classList.remove('hidden');
+            } else if (window.nostr && window.nostr.getPublicKey) {
+                try {
+                    npub = await window.nostr.getPublicKey();
+                    const profile = await fetchProfile(npub);
+                    if (profile && profile.picture) {
+                        profilePic.innerHTML = `<img src="${profile.picture}" alt="Profile Picture">`;
+                        profilePic.classList.remove('hidden');
+                        localStorage.setItem('profile', JSON.stringify({ npub, picture: profile.picture }));
+                    }
+                } catch (error) {
+                    console.error('Error logging in:', error);
+                }
+            } else {
+                alert('NIP-07 extension not found.');
+            }
 
-  handleTouchEnd(event) {
-    event.preventDefault();
-    if (!this.touchStartX || !this.touchStartY) {
-      return;
-    }
+            loadMarketplace();
+        });
 
-    const touch = event.changedTouches[0];
-    const touchEndX = touch.clientX;
-    const touchEndY = touch.clientY;
+        async function fetchProfile(npub) {
+            return new Promise((resolve, reject) => {
+                const ws = new WebSocket('wss://relay.damus.io');
+                ws.onopen = () => {
+                    ws.send(JSON.stringify(["REQ", "1", { kinds: [0], authors: [npub] }]));
+                };
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data[0] === "EVENT" && data[2].content) {
+                        const profile = JSON.parse(data[2].content);
+                        ws.close();
+                        resolve(profile);
+                    }
+                };
+                ws.onerror = (error) => {
+                    reject(error);
+                };
+            });
+        }
 
-    const dx = touchEndX - this.touchStartX;
-    const dy = touchEndY - this.touchStartY;
+        async function loadMarketplace() {
+            const marketplaceList = document.getElementById('marketplace-list');
+            marketplaceList.innerHTML = ''; // Clear the list only once at the beginning
+            const ws = new WebSocket('wss://relay.damus.io');
+            ws.onopen = () => {
+                ws.send(JSON.stringify(["REQ", "2", { kinds: [31664] }]));
+            };
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data[0] === "EVENT" && data[2].content) {
+                        const listContent = JSON.parse(data[2].content);
+                        const profile = data[2].pubkey;
+                        fetchProfile(profile).then(profileData => {
+                            const div = document.createElement('div');
+                            div.className = 'word-list';
+                            div.style.backgroundColor = listContent.color;
+                            div.innerHTML = `
+                                <div class="word-list-header">
+                                    <img src="${profileData.picture}" alt="Profile Picture">
+                                    <span class="username">${profileData.name || profileData.nip05}</span>
+                                    <span class="word-list-name">${listContent.name}</span>
+                                </div>
+                                <div class="author-npub">${profile}</div>
+                                <div class="words hidden">
+                                    <p>${listContent.words.join(', ')}</p>
+                                    <div class="buttons">
+                                        ${profile === npub ? `<button onclick='editMarketplaceList(${JSON.stringify(listContent)}, "${data[2].id}")'>Edit</button>
+                                        <button class='delete' onclick='deleteMarketplaceList("${data[2].id}")'>Delete</button>` : ''}
+                                        <button onclick='importList(${JSON.stringify(listContent)}, "${profileData.picture}")'>Import</button>
+                                    </div>
+                                </div>
+                            `;
+                            marketplaceList.appendChild(div); // Append each note to the list
+                            div.addEventListener('click', () => toggleWords(div));
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error processing data:', error, event.data);
+                }
+            };
+            ws.onerror = (error) => {
+                console.error('Error loading marketplace:', error);
+            };
+        }
 
-    // Minimum swipe distance to trigger direction change
-    const minSwipeDistance = 30;
+        function toggleWords(div) {
+            const wordsDiv = div.querySelector('.words');
+            wordsDiv.classList.toggle('hidden');
+        }
 
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > minSwipeDistance) {
-      // Horizontal swipe
-      this.changeDirection(dx > 0 ? "ArrowRight" : "ArrowLeft");
-    } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > minSwipeDistance) {
-      // Vertical swipe
-      this.changeDirection(dy > 0 ? "ArrowDown" : "ArrowUp");
-    }
+        function openModal(listContent, id) {
+            document.getElementById('modalListName').value = listContent.name;
+            document.getElementById('modalCustomWords').value = listContent.words.join(', ');
+            document.getElementById('modalColorPicker').value = listContent.color;
+            document.getElementById('editModal').style.display = "block";
 
-    // Reset touch start coordinates
-    this.touchStartX = 0;
-    this.touchStartY = 0;
-  }
+            document.getElementById('saveAndPublishButton').onclick = async function() {
+                await saveAndPublishEditedMarketplaceWords(listContent, id);
+                closeModal();
+            };
+        }
 
-  handleKeydown(event) {
-    const key = event.key;
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-      event.preventDefault();
-      this.changeDirection(key);
-    }
-  }
+        function closeModal() {
+            document.getElementById('editModal').style.display = "none";
+        }
 
-  queueDirectionChange(newDirection) {
-    const directionMap = {
-      ArrowUp: { x: 0, y: -1 },
-      ArrowDown: { x: 0, y: 1 },
-      ArrowLeft: { x: -1, y: 0 },
-      ArrowRight: { x: 1, y: 0 },
-    };
+        async function saveAndPublishEditedMarketplaceWords(listContent, id) {
+            const listName = document.getElementById('modalListName').value;
+            const words = document.getElementById('modalCustomWords').value.split(',').map(word => word.trim());
+            const color = document.getElementById('modalColorPicker').value;
 
-    if (directionMap[newDirection]) {
-      this.nextDirection = directionMap[newDirection];
-    }
-  }
+            if (listName && words.length > 0) {
+                listContent.name = listName;
+                listContent.words = words;
+                listContent.color = color;
 
-  reset() {
-    this.snake = [{ x: 10, y: 10 }];
-    this.direction = { x: 0, y: 0 };
-    this.lightning = this.getRandomPosition();
-    this.score = 0;
-    this.gameOver = false;
-    this.electrifiedUntil = 0;
-    this.directionQueue = []; // Reset direction queue
-    this.isPaused = false;
-  }
-  start() {
-    this.reset();
-    this.gameLoop();
-  }
+                await publishWordList(listContent, id);
+                alert('Word list updated and published!');
+            } else {
+                alert('Please enter a list name and words.');
+            }
+        }
 
-  gameLoop(currentTime) {
-    try {
-      if (this.gameOver) {
-        this.onGameOver(this.score);
-        return;
-      }
+        async function editMarketplaceList(listContent, id) {
+            openModal(listContent, id);
+        }
 
-      this.gameLoopId = window.requestAnimationFrame(this.gameLoop.bind(this));
+        async function deleteMarketplaceList(id) {
+            const event = {
+                kind: 5,  // kind 5 is used for deletion in Nostr
+                content: '',
+                tags: [
+                    ["e", id]  // e tag to specify the event ID of the list to be deleted
+                ],
+                pubkey: npub,
+                created_at: Math.floor(Date.now() / 1000)
+            };
 
-      if (this.isPaused) {
-        return; // Don't update game state if paused
-      }
+            try {
+                const signedEvent = await window.nostr.signEvent(event);
+                postEvent(signedEvent);
+                alert('Word list deleted from Nostr!');
+                loadMarketplace();
+            } catch (error) {
+                console.error('Error deleting word list:', error);
+            }
+        }
 
-      const secondsSinceLastRender = (currentTime - this.lastRenderTime) / 1000;
-      if (secondsSinceLastRender < 1 / CONFIG.TICK_RATE) return;
+        async function publishWordList(listContent, id) {
+            const event = {
+                kind: 31664,
+                content: JSON.stringify(listContent),
+                created_at: Math.floor(Date.now() / 1000),
+                tags: [
+                    ["n", listContent.name],
+                    ["l", listContent.words.join(',')],
+                    ["c", listContent.color],
+                    ["d", npub]
+                ],
+                pubkey: npub
+            };
 
-      this.lastRenderTime = currentTime;
+            try {
+                const signedEvent = await window.nostr.signEvent(event);
+                postEvent(signedEvent);
+                alert('Word list published to Nostr!');
+            } catch (error) {
+                console.error('Error publishing word list:', error);
+            }
+        }
 
-      this.update();
-      this.draw();
-    } catch (error) {
-      console.error("Error in game loop:", error);
-      this.gameOver = true;
-    }
-  }
+        function postEvent(event) {
+            const ws = new WebSocket('wss://relay.damus.io');
+            ws.onopen = () => {
+                ws.send(JSON.stringify(["EVENT", event]));
+            };
+            ws.onmessage = (msg) => {
+                console.log('Event posted:', msg.data);
+                ws.close();
+            };
+            ws.onerror = (error) => {
+                console.error('Error posting event:', error);
+            };
+        }
 
-  update() {
-    // Apply the next direction if it's set
-    if (this.nextDirection.x !== 0 || this.nextDirection.y !== 0) {
-      this.direction = this.nextDirection;
-      this.lastDirection = this.direction;
-      this.nextDirection = { x: 0, y: 0 };
-    } else if (this.directionQueue.length > 0) {
-      // If no immediate direction, check the queue
-      const nextDir = this.directionQueue.shift();
-      if (this.isValidDirectionChange(this.lastDirection, nextDir)) {
-        this.direction = nextDir;
-        this.lastDirection = this.direction;
-      }
-    }
+        function importList(listContent, creatorPicture) {
+            listContent.creatorPicture = creatorPicture;
+            customWordLists.push(listContent);
+            localStorage.setItem('customWordLists', JSON.stringify(customWordLists));
+            alert('List imported to your word lists!');
+        }
 
-    const head = {
-      x: this.wrapCoordinate(this.snake[0].x + this.direction.x),
-      y: this.wrapCoordinate(this.snake[0].y + this.direction.y),
-    };
+        function openIframe() {
+            document.getElementById('iframeContainer').style.display = 'flex';
+            document.getElementById('iframe').src = 'https://zaplinks.lol/z.php?npub=npub1ymt2j3n8tesrlr0yhaheem6yyqmmwrr7actslurw6annls6vnrcslapxnz';
+        }
 
-    // Check for collision before adding the new head
-    if (this.checkCollision(head)) {
-      this.gameOver = true;
-      return;
-    }
+        function closeIframe() {
+            document.getElementById('iframeContainer').style.display = 'none';
+            document.getElementById('iframe').src = 'about:blank';
+        }
 
-    // Add the new head to the snake
-    this.snake.unshift(head);
-
-    // Check if the snake has eaten the food
-    if (head.x === this.lightning.x && head.y === this.lightning.y) {
-      // Increase score and generate new food
-      this.score++;
-      this.updateScoreDisplay();
-      this.lightning = this.getRandomPosition();
-      this.onScoreUpdate(this.score);
-      this.electrifiedUntil = Date.now() + CONFIG.ELECTRIFIED_DURATION;
-      // Don't remove the tail when food is eaten
-    } else {
-      // Remove the tail if no food was eaten
-      this.snake.pop();
-    }
-  }
-
-  draw() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    const isElectrified = Date.now() < this.electrifiedUntil;
-
-    // Draw snake
-    this.snake.forEach((segment, index) => {
-      this.ctx.font = `${this.cellSize * 0.8}px Arial`;
-      this.ctx.textAlign = "center";
-      this.ctx.textBaseline = "middle";
-
-      let emoji;
-      if (index === 0) {
-        emoji = CONFIG.DEFAULT_EMOJI;
-      } else if (isElectrified && index % 2 === 0) {
-        emoji = CONFIG.ELECTRIFIED_EMOJI;
-      } else {
-        emoji = "🟩";
-      }
-
-      this.ctx.fillText(
-        emoji,
-        segment.x * this.cellSize + this.cellSize / 2,
-        segment.y * this.cellSize + this.cellSize / 2
-      );
-    });
-
-    // Draw lightning
-    this.ctx.fillText(
-      CONFIG.LIGHTNING_EMOJI,
-      this.lightning.x * this.cellSize + this.cellSize / 2,
-      this.lightning.y * this.cellSize + this.cellSize / 2
-    );
-  }
-
-  wrapCoordinate(coord) {
-    return (coord + CONFIG.GAME_SIZE) % CONFIG.GAME_SIZE;
-  }
-
-  checkCollision(head) {
-    return this.snake
-      .slice(1)
-      .some(
-        (segment) =>
-          this.wrapCoordinate(segment.x) === head.x &&
-          this.wrapCoordinate(segment.y) === head.y
-      );
-  }
-
-  getRandomPosition() {
-    let newPosition;
-    do {
-      newPosition = {
-        x: Math.floor(Math.random() * CONFIG.GAME_SIZE),
-        y: Math.floor(Math.random() * CONFIG.GAME_SIZE),
-      };
-    } while (this.isPositionOccupied(newPosition));
-    return newPosition;
-  }
-
-  isPositionOccupied(position) {
-    return this.snake.some(
-      (segment) => segment.x === position.x && segment.y === position.y
-    );
-  }
-
-  changeDirection(newDirection) {
-    const directionMap = {
-      ArrowUp: { x: 0, y: -1 },
-      ArrowDown: { x: 0, y: 1 },
-      ArrowLeft: { x: -1, y: 0 },
-      ArrowRight: { x: 1, y: 0 },
-    };
-
-    if (directionMap[newDirection]) {
-      const proposedDirection = directionMap[newDirection];
-      if (this.isValidDirectionChange(this.lastDirection, proposedDirection)) {
-        // If it's a valid change from the last direction, apply it immediately
-        this.nextDirection = proposedDirection;
-      } else if (this.directionQueue.length === 0) {
-        // If it's not valid now, but the queue is empty, queue it for the next update
-        this.directionQueue.push(proposedDirection);
-      }
-      // If neither condition is met, ignore the input (prevents queue flooding)
-    }
-  }
-
-  isValidDirectionChange(currentDir, newDir) {
-    return (
-      (currentDir.x + newDir.x !== 0 || currentDir.y + newDir.y !== 0) &&
-      (newDir.x !== 0 || newDir.y !== 0)
-    );
-  }
-
-  togglePause() {
-    this.isPaused = !this.isPaused;
-    if (this.isPaused) {
-      this.pauseMenu.style.display = "flex";
-    } else {
-      this.pauseMenu.style.display = "none";
-    }
-  }
-
-  resumeGame() {
-    if (this.isPaused) {
-      this.togglePause();
-    }
-  }
-
-  restartGame() {
-    this.reset();
-    this.resumeGame();
-  }
-
-  navigateToHighscores() {
-    this.isPaused = false;
-    this.gameOver = true;
-    window.location.href = "highscores.html";
-  }
-
-  updateScoreDisplay() {
-    // This method should be implemented to update the score display in your UI
-    console.log(`Score: ${this.score}`);
-  }
-
-  onGameOver(score) {
-    // This method can be overridden from outside to handle game over events
-    console.log(`Game Over. Final Score: ${score}`);
-  }
-
-  onScoreUpdate(score) {
-    // This method can be overridden from outside to handle score updates
-    console.log(`Score Updated: ${score}`);
-  }
-}
+        function goHome() {
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
